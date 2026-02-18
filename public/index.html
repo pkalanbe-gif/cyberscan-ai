@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CyberScan AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0c0c14;--bg2:#111122;--bg3:#161630;--bg4:#1c1c3a;
+--green:#00ff88;--cyan:#00d4ff;--red:#ff2d55;--orange:#ff8800;--yellow:#ffd600;
+--text:#e0e0f0;--text2:#a0a0c0;--text3:#6a6a90;
+--glass:rgba(20,20,50,0.6);--glass2:rgba(30,30,70,0.5);
+--border:rgba(0,255,136,0.15);--border2:rgba(0,212,255,0.15);
+--radius:12px;--radius2:16px;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;position:relative}
+
+/* Matrix Background */
+#matrix-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.06}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--green);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan)}
+
+/* Animations */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow{0%,100%{box-shadow:0 0 5px rgba(0,255,136,0.3)}50%{box-shadow:0 0 20px rgba(0,255,136,0.6)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes scanline{0%{top:-10%}100%{top:110%}}
+@keyframes rotateGlow{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(120%);opacity:0}}
+@keyframes typing{from{width:0}to{width:100%}}
+@keyframes blink{50%{border-color:transparent}}
+@keyframes progressPulse{0%{box-shadow:0 0 0 0 rgba(0,255,136,0.4)}70%{box-shadow:0 0 0 10px rgba(0,255,136,0)}100%{box-shadow:0 0 0 0 rgba(0,255,136,0)}}
+@keyframes matrixFall{0%{transform:translateY(-100%);opacity:1}100%{transform:translateY(100vh);opacity:0}}
+
+.fade-in-up{animation:fadeInUp 0.5s ease both}
+.fade-in-up-d1{animation:fadeInUp 0.5s 0.1s ease both}
+.fade-in-up-d2{animation:fadeInUp 0.5s 0.2s ease both}
+.fade-in-up-d3{animation:fadeInUp 0.5s 0.3s ease both}
+
+/* Layout */
+.app-container{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:16px;min-height:100vh}
+
+/* Header */
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius2);margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.app-logo{display:flex;align-items:center;gap:12px}
+.app-logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--green),var(--cyan));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;animation:glow 3s ease-in-out infinite}
+.app-title{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.app-subtitle{font-size:0.7rem;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:2px;text-transform:uppercase}
+.header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* Online Indicator */
+.online-indicator{display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text2);padding:6px 12px;background:var(--glass2);border-radius:20px;border:1px solid var(--border)}
+.online-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s ease infinite}
+.online-dot.online{background:var(--green)}
+.online-dot.offline{background:var(--red)}
+
+/* Language Selector */
+.lang-selector{display:flex;gap:4px;background:var(--glass2);border-radius:8px;padding:3px;border:1px solid var(--border)}
+.lang-btn{background:transparent;border:none;color:var(--text3);font-size:0.75rem;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all 0.2s}
+.lang-btn.active{background:var(--green);color:var(--bg);box-shadow:0 0 12px rgba(0,255,136,0.3)}
+.lang-btn:hover:not(.active){color:var(--text)}
+
+/* Settings Button */
+.settings-btn{background:var(--glass2);border:1px solid var(--border);color:var(--text2);width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;transition:all 0.2s}
+.settings-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* Tab Bar */
+.tab-bar{display:flex;gap:4px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius2);padding:5px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab-bar::-webkit-scrollbar{height:0}
+.tab-btn{flex:1;min-width:fit-content;white-space:nowrap;background:transparent;border:none;color:var(--text3);font-size:0.8rem;font-family:'DM Sans',sans-serif;font-weight:600;padding:10px 16px;border-radius:10px;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab-btn.active{background:linear-gradient(135deg,rgba(0,255,136,0.15),rgba(0,212,255,0.1));color:var(--green);border:1px solid rgba(0,255,136,0.2);box-shadow:0 0 15px rgba(0,255,136,0.1)}
+.tab-btn:hover:not(.active){color:var(--text);background:rgba(255,255,255,0.03)}
+
+/* Cards */
+.card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius2);padding:24px;margin-bottom:16px;position:relative;overflow:hidden;transition:border-color 0.3s}
+.card:hover{border-color:rgba(0,255,136,0.25)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:0.5}
+.card-title{font-size:1.1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.card-title .icon{font-size:1.3rem}
+
+/* Input Groups */
+.input-group{margin-bottom:16px}
+.input-label{font-size:0.8rem;color:var(--text2);margin-bottom:6px;font-weight:500;display:block}
+.input-field{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;color:var(--text);font-size:0.95rem;font-family:'DM Mono',monospace;transition:all 0.3s;outline:none}
+.input-field:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,255,136,0.1)}
+.input-field::placeholder{color:var(--text3)}
+
+/* Buttons */
+.btn{padding:12px 24px;border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.9rem;cursor:pointer;transition:all 0.3s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--green),#00cc6a);color:var(--bg);box-shadow:0 4px 15px rgba(0,255,136,0.25)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(0,255,136,0.35)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--glass2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--green);color:var(--green)}
+.btn-danger{background:rgba(255,45,85,0.15);color:var(--red);border:1px solid rgba(255,45,85,0.2)}
+.btn-danger:hover{background:rgba(255,45,85,0.25)}
+.btn-sm{padding:8px 14px;font-size:0.8rem}
+.btn-full{width:100%;justify-content:center}
+
+/* Progress Bar */
+.progress-container{margin:16px 0;height:6px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:3px;transition:width 0.3s ease;animation:progressPulse 2s ease infinite}
+.progress-label{font-size:0.75rem;color:var(--text3);margin-top:6px;text-align:center;font-family:'DM Mono',monospace}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:6px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace}
+.badge-high,.badge-critical{background:rgba(255,45,85,0.15);color:var(--red);border:1px solid rgba(255,45,85,0.3)}
+.badge-medium,.badge-warning{background:rgba(255,136,0,0.15);color:var(--orange);border:1px solid rgba(255,136,0,0.3)}
+.badge-low,.badge-info{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid rgba(0,255,136,0.3)}
+.badge-none{background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.2)}
+
+/* Result Sections */
+.result-section{margin-top:16px;padding:16px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border)}
+.result-section h3{font-size:0.95rem;margin-bottom:12px;color:var(--cyan);display:flex;align-items:center;gap:8px}
+.result-item{padding:10px 14px;margin-bottom:8px;background:rgba(0,0,0,0.2);border-radius:8px;border-left:3px solid var(--green);font-size:0.85rem;line-height:1.6}
+.result-item.danger{border-left-color:var(--red)}
+.result-item.warning{border-left-color:var(--orange)}
+.result-item.info{border-left-color:var(--cyan)}
+.result-item strong{color:var(--green);font-family:'DM Mono',monospace}
+.result-item code{background:rgba(0,255,136,0.08);padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--cyan)}
+
+/* Password Gauge */
+.password-gauge-container{display:flex;align-items:center;justify-content:center;margin:20px 0}
+.password-gauge{position:relative;width:160px;height:160px}
+.password-gauge svg{transform:rotate(-90deg)}
+.password-gauge-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.password-gauge-score{font-size:2.2rem;font-weight:700;font-family:'DM Mono',monospace}
+.password-gauge-label{font-size:0.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+
+/* Password Strength Bar */
+.strength-bar-container{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;margin:12px 0}
+.strength-bar{height:100%;border-radius:4px;transition:width 0.5s ease,background 0.5s ease}
+
+/* Char Analysis Grid */
+.char-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:12px}
+.char-item{background:var(--bg2);padding:12px;border-radius:var(--radius);text-align:center;border:1px solid var(--border)}
+.char-item .char-icon{font-size:1.5rem;margin-bottom:4px}
+.char-item .char-label{font-size:0.7rem;color:var(--text3)}
+.char-item .char-value{font-size:1rem;font-weight:700;font-family:'DM Mono',monospace}
+.char-item.active{border-color:var(--green)}
+.char-item.active .char-value{color:var(--green)}
+.char-item.inactive .char-value{color:var(--red)}
+
+/* CVSS Gauge */
+.cvss-gauge{display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;position:relative}
+.cvss-gauge svg{transform:rotate(-90deg);position:absolute}
+.cvss-gauge .cvss-text{font-size:0.85rem;font-weight:700;font-family:'DM Mono',monospace;z-index:1}
+
+/* CVE Table */
+.cve-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:0.82rem}
+.cve-table th{text-align:left;padding:10px 12px;background:var(--bg);color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+.cve-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:top}
+.cve-table tr:hover td{background:rgba(0,255,136,0.02)}
+.cve-table-wrapper{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+
+/* Stats Cards */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--glass2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.stat-card.green::after{background:var(--green)}
+.stat-card.cyan::after{background:var(--cyan)}
+.stat-card.red::after{background:var(--red)}
+.stat-card.orange::after{background:var(--orange)}
+.stat-number{font-size:2rem;font-weight:700;font-family:'DM Mono',monospace}
+.stat-label{font-size:0.75rem;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+
+/* History List */
+.history-list{max-height:400px;overflow-y:auto}
+.history-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg2);border-radius:var(--radius);margin-bottom:8px;border:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.history-item-info{flex:1;min-width:0}
+.history-item-target{font-family:'DM Mono',monospace;font-size:0.85rem;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item-meta{font-size:0.7rem;color:var(--text3);margin-top:2px;display:flex;gap:10px}
+.history-item-actions{display:flex;gap:6px}
+
+/* Toast */
+.toast-container{position:fixed;top:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:8px;max-width:360px}
+.toast{padding:14px 18px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:var(--radius);border:1px solid var(--border);font-size:0.85rem;animation:slideIn 0.3s ease;display:flex;align-items:center;gap:10px;cursor:pointer}
+.toast.removing{animation:slideOut 0.3s ease forwards}
+.toast.success{border-color:rgba(0,255,136,0.3)}
+.toast.error{border-color:rgba(255,45,85,0.3)}
+.toast.info{border-color:rgba(0,212,255,0.3)}
+
+/* Modal / Settings Panel */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeInUp 0.2s ease}
+.modal-content{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);padding:28px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto}
+.modal-title{font-size:1.2rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.modal-close{background:none;border:none;color:var(--text3);font-size:1.3rem;cursor:pointer;margin-left:auto}
+.modal-close:hover{color:var(--red)}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.toggle-label{font-size:0.9rem;color:var(--text)}
+.toggle{width:44px;height:24px;background:var(--bg2);border-radius:12px;position:relative;cursor:pointer;transition:all 0.3s;border:1px solid var(--border)}
+.toggle.active{background:rgba(0,255,136,0.2);border-color:var(--green)}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:var(--text3);top:2px;left:2px;transition:all 0.3s}
+.toggle.active::after{left:22px;background:var(--green)}
+
+/* API Key Section */
+.api-section{margin-bottom:20px;padding:16px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border)}
+.api-section .input-field{font-size:0.82rem}
+.api-key-row{display:flex;gap:8px}
+.api-key-row .input-field{flex:1}
+
+/* Empty State */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:12px;opacity:0.5}
+.empty-state .empty-text{font-size:0.9rem}
+
+/* Export Button */
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* Disclaimer */
+.disclaimer{font-size:0.7rem;color:var(--text3);text-align:center;padding:8px 12px;background:rgba(255,136,0,0.05);border:1px solid rgba(255,136,0,0.1);border-radius:8px;margin-bottom:16px;font-style:italic}
+
+/* Loading Skeleton */
+.skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;height:20px;margin-bottom:8px}
+.skeleton.wide{width:100%}
+.skeleton.medium{width:70%}
+.skeleton.short{width:40%}
+
+/* Responsive */
+@media(max-width:768px){
+  .app-header{padding:12px 14px}
+  .app-title{font-size:1.1rem}
+  .tab-btn{font-size:0.72rem;padding:8px 10px}
+  .tab-btn .tab-label{display:none}
+  .card{padding:16px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .char-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+  .app-container{padding:10px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .header-actions{width:100%;justify-content:space-between}
+  .history-item{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<canvas id="matrix-bg"></canvas>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ============ TRANSLATIONS ============
+const T = {
+  ht: {
+    appTitle: "CyberScan AI",
+    appSubtitle: "Analiz Sekirite Sibeenetik",
+    tabs: { scanner: "Eskanè", vuln: "Vilnerabilite", password: "Modpas", headers: "Antèt", stats: "Estatistik" },
+    scanner: {
+      title: "Eskanè Rezo",
+      inputLabel: "Adrès IP oswa Domèn",
+      placeholder: "ex: 192.168.1.1 oswa example.com",
+      scanBtn: "Eskane",
+      scanning: "Ap eskane...",
+      disclaimer: "Sa se yon analiz edikasyonèl ki itilize AI. Li pa fè eskanè rezo reyèl.",
+      results: "Rezilta Analiz",
+      ports: "Analiz Pò",
+      services: "Deteksyon Sèvis",
+      risks: "Evalyasyon Risk",
+      recommendations: "Rekomandasyon"
+    },
+    vuln: {
+      title: "Chèk Vilnerabilite",
+      inputLabel: "Teknoloji / Lojisyèl",
+      placeholder: "ex: Apache 2.4.49, WordPress 5.8",
+      checkBtn: "Tcheke",
+      checking: "Ap tcheke...",
+      cves: "CVE yo Konnen",
+      cvss: "Nòt CVSS",
+      exploits: "Eksplwa Disponib",
+      patches: "Rekomandasyon Patch",
+      severity: "Gravite"
+    },
+    password: {
+      title: "Analizè Modpas",
+      inputLabel: "Antre Modpas (Lokal Sèlman)",
+      placeholder: "Tape modpas ou...",
+      localOnly: "Modpas ou PA JANM voye sou entènèt. Tout analiz fèt lokal.",
+      strength: "Fòs",
+      timeToCrack: "Tan pou Krake",
+      entropy: "Antropi",
+      charset: "Gwosè Karaktè",
+      length: "Longè",
+      charAnalysis: "Analiz Karaktè",
+      lower: "Miniskil",
+      upper: "Majiskil",
+      digits: "Chif",
+      symbols: "Senbòl",
+      suggestions: "Sijesyon",
+      patterns: "Modèl Detekte",
+      hasRepeats: "Gen karaktè ki repete",
+      isCommon: "Gen modèl komen",
+      noIssues: "Pa gen pwoblèm detekte",
+      levels: ["Trè Fèb", "Fèb", "Mwayen", "Fò", "Trè Fò"]
+    },
+    headers: {
+      title: "Analizè Antèt",
+      inputLabel: "URL pou Analize",
+      placeholder: "ex: https://example.com",
+      analyzeBtn: "Analize",
+      analyzing: "Ap analize...",
+      present: "Antèt Prezan",
+      missing: "Antèt ki Manke",
+      riskLevel: "Nivo Risk",
+      recommendations: "Rekomandasyon"
+    },
+    stats: {
+      title: "Estatistik",
+      totalScans: "Total Eskan",
+      networkScans: "Eskan Rezo",
+      vulnChecks: "Chèk Vilnerabilite",
+      headerAnalyses: "Analiz Antèt",
+      history: "Istwa Eskan",
+      noHistory: "Pa gen istwa ankò",
+      mostScanned: "Sib ki Pi Eskane",
+      clearHistory: "Efase Istwa"
+    },
+    settings: {
+      title: "Paramèt",
+      apiKey: "Kle API Claude",
+      apiKeyPlaceholder: "sk-ant-...",
+      saveKey: "Sove",
+      removeKey: "Retire",
+      offlineMode: "Mòd San Entènèt",
+      offlineDesc: "Itilize rezilta ki nan kach lè pa gen entènèt",
+      language: "Lang",
+      clearCache: "Efase Kach",
+      clearAll: "Efase Tout Done",
+      close: "Fèmen"
+    },
+    common: {
+      online: "An liy",
+      offline: "San entènèt",
+      export: "Ekspòte",
+      favorite: "Favori",
+      unfavorite: "Retire Favori",
+      delete: "Efase",
+      noResults: "Pa gen rezilta",
+      error: "Erè",
+      success: "Siksè",
+      loading: "Ap chaje...",
+      cached: "Rezilta nan Kach",
+      viewResult: "Wè Rezilta"
+    }
+  },
+  fr: {
+    appTitle: "CyberScan AI",
+    appSubtitle: "Analyse de Securite Cybernetique",
+    tabs: { scanner: "Scanner", vuln: "Vulnerabilites", password: "Mot de passe", headers: "En-tetes", stats: "Statistiques" },
+    scanner: {
+      title: "Scanner Reseau",
+      inputLabel: "Adresse IP ou Domaine",
+      placeholder: "ex: 192.168.1.1 ou example.com",
+      scanBtn: "Scanner",
+      scanning: "Analyse en cours...",
+      disclaimer: "Ceci est une analyse educative utilisant l'IA. Aucun scan reseau reel n'est effectue.",
+      results: "Resultats de l'Analyse",
+      ports: "Analyse des Ports",
+      services: "Detection de Services",
+      risks: "Evaluation des Risques",
+      recommendations: "Recommandations"
+    },
+    vuln: {
+      title: "Verification des Vulnerabilites",
+      inputLabel: "Technologie / Logiciel",
+      placeholder: "ex: Apache 2.4.49, WordPress 5.8",
+      checkBtn: "Verifier",
+      checking: "Verification en cours...",
+      cves: "CVE Connues",
+      cvss: "Score CVSS",
+      exploits: "Exploits Disponibles",
+      patches: "Recommandations de Correctifs",
+      severity: "Severite"
+    },
+    password: {
+      title: "Analyseur de Mot de Passe",
+      inputLabel: "Entrer le mot de passe (Local uniquement)",
+      placeholder: "Tapez votre mot de passe...",
+      localOnly: "Votre mot de passe n'est JAMAIS envoye sur Internet. Toute l'analyse est locale.",
+      strength: "Force",
+      timeToCrack: "Temps pour Craquer",
+      entropy: "Entropie",
+      charset: "Taille du Jeu de Caracteres",
+      length: "Longueur",
+      charAnalysis: "Analyse des Caracteres",
+      lower: "Minuscules",
+      upper: "Majuscules",
+      digits: "Chiffres",
+      symbols: "Symboles",
+      suggestions: "Suggestions",
+      patterns: "Motifs Detectes",
+      hasRepeats: "Caracteres repetes detectes",
+      isCommon: "Motif commun detecte",
+      noIssues: "Aucun probleme detecte",
+      levels: ["Tres Faible", "Faible", "Moyen", "Fort", "Tres Fort"]
+    },
+    headers: {
+      title: "Analyseur d'En-tetes",
+      inputLabel: "URL a Analyser",
+      placeholder: "ex: https://example.com",
+      analyzeBtn: "Analyser",
+      analyzing: "Analyse en cours...",
+      present: "En-tetes Presents",
+      missing: "En-tetes Manquants",
+      riskLevel: "Niveau de Risque",
+      recommendations: "Recommandations"
+    },
+    stats: {
+      title: "Statistiques",
+      totalScans: "Total des Scans",
+      networkScans: "Scans Reseau",
+      vulnChecks: "Verif. Vulnerabilites",
+      headerAnalyses: "Analyses d'En-tetes",
+      history: "Historique des Scans",
+      noHistory: "Pas encore d'historique",
+      mostScanned: "Cibles les Plus Scannees",
+      clearHistory: "Effacer l'Historique"
+    },
+    settings: {
+      title: "Parametres",
+      apiKey: "Cle API Claude",
+      apiKeyPlaceholder: "sk-ant-...",
+      saveKey: "Sauvegarder",
+      removeKey: "Supprimer",
+      offlineMode: "Mode Hors Ligne",
+      offlineDesc: "Utiliser les resultats en cache quand pas de connexion",
+      language: "Langue",
+      clearCache: "Vider le Cache",
+      clearAll: "Effacer Toutes les Donnees",
+      close: "Fermer"
+    },
+    common: {
+      online: "En ligne",
+      offline: "Hors ligne",
+      export: "Exporter",
+      favorite: "Favori",
+      unfavorite: "Retirer Favori",
+      delete: "Supprimer",
+      noResults: "Pas de resultats",
+      error: "Erreur",
+      success: "Succes",
+      loading: "Chargement...",
+      cached: "Resultat en Cache",
+      viewResult: "Voir le Resultat"
+    }
+  },
+  en: {
+    appTitle: "CyberScan AI",
+    appSubtitle: "Cybernetic Security Analysis",
+    tabs: { scanner: "Scanner", vuln: "Vulnerabilities", password: "Password", headers: "Headers", stats: "Statistics" },
+    scanner: {
+      title: "Network Scanner",
+      inputLabel: "IP Address or Domain",
+      placeholder: "e.g., 192.168.1.1 or example.com",
+      scanBtn: "Scan",
+      scanning: "Scanning...",
+      disclaimer: "This is an educational AI analysis. No actual network scanning is performed.",
+      results: "Analysis Results",
+      ports: "Port Analysis",
+      services: "Service Detection",
+      risks: "Risk Assessment",
+      recommendations: "Recommendations"
+    },
+    vuln: {
+      title: "Vulnerability Check",
+      inputLabel: "Technology / Software",
+      placeholder: "e.g., Apache 2.4.49, WordPress 5.8",
+      checkBtn: "Check",
+      checking: "Checking...",
+      cves: "Known CVEs",
+      cvss: "CVSS Score",
+      exploits: "Available Exploits",
+      patches: "Patch Recommendations",
+      severity: "Severity"
+    },
+    password: {
+      title: "Password Analyzer",
+      inputLabel: "Enter Password (Local Only)",
+      placeholder: "Type your password...",
+      localOnly: "Your password is NEVER sent over the internet. All analysis is done locally.",
+      strength: "Strength",
+      timeToCrack: "Time to Crack",
+      entropy: "Entropy",
+      charset: "Charset Size",
+      length: "Length",
+      charAnalysis: "Character Analysis",
+      lower: "Lowercase",
+      upper: "Uppercase",
+      digits: "Digits",
+      symbols: "Symbols",
+      suggestions: "Suggestions",
+      patterns: "Patterns Detected",
+      hasRepeats: "Repeated characters detected",
+      isCommon: "Common pattern detected",
+      noIssues: "No issues detected",
+      levels: ["Very Weak", "Weak", "Medium", "Strong", "Very Strong"]
+    },
+    headers: {
+      title: "Header Analyzer",
+      inputLabel: "URL to Analyze",
+      placeholder: "e.g., https://example.com",
+      analyzeBtn: "Analyze",
+      analyzing: "Analyzing...",
+      present: "Headers Present",
+      missing: "Missing Headers",
+      riskLevel: "Risk Level",
+      recommendations: "Recommendations"
+    },
+    stats: {
+      title: "Statistics",
+      totalScans: "Total Scans",
+      networkScans: "Network Scans",
+      vulnChecks: "Vuln Checks",
+      headerAnalyses: "Header Analyses",
+      history: "Scan History",
+      noHistory: "No history yet",
+      mostScanned: "Most Scanned Targets",
+      clearHistory: "Clear History"
+    },
+    settings: {
+      title: "Settings",
+      apiKey: "Claude API Key",
+      apiKeyPlaceholder: "sk-ant-...",
+      saveKey: "Save",
+      removeKey: "Remove",
+      offlineMode: "Offline Mode",
+      offlineDesc: "Use cached results when offline",
+      language: "Language",
+      clearCache: "Clear Cache",
+      clearAll: "Clear All Data",
+      close: "Close"
+    },
+    common: {
+      online: "Online",
+      offline: "Offline",
+      export: "Export",
+      favorite: "Favorite",
+      unfavorite: "Unfavorite",
+      delete: "Delete",
+      noResults: "No results",
+      error: "Error",
+      success: "Success",
+      loading: "Loading...",
+      cached: "Cached Result",
+      viewResult: "View Result"
+    }
+  }
+};
+
+// ============ PASSWORD ANALYZER (CLIENT-SIDE ONLY) ============
+function analyzePassword(password) {
+  if (!password) return null;
+  let score = 0;
+  const len = password.length;
+  if (len >= 8) score += 10;
+  if (len >= 12) score += 15;
+  if (len >= 16) score += 20;
+  if (len >= 20) score += 10;
+  if (/[a-z]/.test(password)) score += 5;
+  if (/[A-Z]/.test(password)) score += 10;
+  if (/[0-9]/.test(password)) score += 10;
+  if (/[^a-zA-Z0-9]/.test(password)) score += 15;
+  if (/(.)\1{2,}/.test(password)) score -= 10;
+  if (/^[a-z]+$|^[A-Z]+$|^[0-9]+$/.test(password)) score -= 15;
+  if (/^(123|abc|qwerty|password|admin|letmein|welcome|monkey|dragon)/i.test(password)) score -= 20;
+  const charsetSize = ((/[a-z]/.test(password)) ? 26 : 0) + ((/[A-Z]/.test(password)) ? 26 : 0) + ((/[0-9]/.test(password)) ? 10 : 0) + ((/[^a-zA-Z0-9]/.test(password)) ? 32 : 0);
+  const entropy = len * Math.log2(charsetSize || 1);
+  score = Math.max(0, Math.min(100, score));
+  const guessesPerSec = 1e10;
+  const combinations = Math.pow(charsetSize || 1, len);
+  const seconds = combinations / guessesPerSec;
+  return {
+    score, entropy: Math.round(entropy * 10) / 10, seconds, charsetSize, length: len,
+    hasLower: /[a-z]/.test(password), hasUpper: /[A-Z]/.test(password),
+    hasDigit: /[0-9]/.test(password), hasSymbol: /[^a-zA-Z0-9]/.test(password),
+    hasRepeats: /(.)\1{2,}/.test(password),
+    isCommon: /^(123|abc|qwerty|password|admin|letmein|welcome|monkey|dragon)/i.test(password)
+  };
+}
+
+function formatCrackTime(seconds) {
+  if (!isFinite(seconds) || seconds > 1e30) return "> 1 trillion years";
+  if (seconds < 0.001) return "Instant";
+  if (seconds < 1) return "< 1 second";
+  if (seconds < 60) return Math.round(seconds) + " seconds";
+  if (seconds < 3600) return Math.round(seconds / 60) + " minutes";
+  if (seconds < 86400) return Math.round(seconds / 3600) + " hours";
+  if (seconds < 86400 * 365) return Math.round(seconds / 86400) + " days";
+  if (seconds < 86400 * 365 * 1000) return Math.round(seconds / (86400 * 365)) + " years";
+  if (seconds < 86400 * 365 * 1e6) return Math.round(seconds / (86400 * 365 * 1000)) + "K years";
+  if (seconds < 86400 * 365 * 1e9) return Math.round(seconds / (86400 * 365 * 1e6)) + "M years";
+  return Math.round(seconds / (86400 * 365 * 1e9)) + "B years";
+}
+
+function getStrengthLevel(score) {
+  if (score < 20) return 0;
+  if (score < 40) return 1;
+  if (score < 60) return 2;
+  if (score < 80) return 3;
+  return 4;
+}
+
+function getStrengthColor(level) {
+  const colors = ["#ff2d55", "#ff6b35", "#ff8800", "#00d4ff", "#00ff88"];
+  return colors[level] || colors[0];
+}
+
+// ============ UTILITY ============
+function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+
+function getCacheKey(type, target) { return `cyberscan_cache_${type}_${target.toLowerCase().trim()}`; }
+
+// ============ CLAUDE API ============
+async function callClaude(apiKey, systemPrompt, userMessage) {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }]
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API Error: ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+// ============ MATRIX BACKGROUND ============
+function initMatrix() {
+  const canvas = document.getElementById("matrix-bg");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const chars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+  const fontSize = 14;
+  const columns = Math.floor(canvas.width / fontSize);
+  const drops = Array(columns).fill(1);
+  function draw() {
+    ctx.fillStyle = "rgba(12,12,20,0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#00ff8820";
+    ctx.font = fontSize + "px DM Mono, monospace";
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  setInterval(draw, 80);
+  window.addEventListener("resize", () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+}
+
+// ============ TOAST COMPONENT ============
+function ToastContainer({ toasts, removeToast }) {
+  return (
+    <div className="toast-container">
+      {toasts.map(t => (
+        <div key={t.id} className={`toast ${t.type} ${t.removing ? "removing" : ""}`} onClick={() => removeToast(t.id)}>
+          <span>{t.type === "success" ? "\u2705" : t.type === "error" ? "\u274C" : "\u2139\uFE0F"}</span>
+          <span>{t.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============ SETTINGS MODAL ============
+function SettingsModal({ show, onClose, lang, setLang, t, apiKey, setApiKey, offlineMode, setOfflineMode, addToast }) {
+  const [keyInput, setKeyInput] = useState(apiKey);
+  if (!show) return null;
+  const saveKey = () => {
+    localStorage.setItem("cyberscan_api_key", keyInput);
+    setApiKey(keyInput);
+    addToast(t.common.success, "success");
+  };
+  const removeKey = () => {
+    localStorage.removeItem("cyberscan_api_key");
+    setKeyInput("");
+    setApiKey("");
+    addToast(t.common.success, "success");
+  };
+  const clearCache = () => {
+    Object.keys(localStorage).filter(k => k.startsWith("cyberscan_cache_")).forEach(k => localStorage.removeItem(k));
+    addToast(t.common.success, "success");
+  };
+  const clearAll = () => {
+    Object.keys(localStorage).filter(k => k.startsWith("cyberscan_")).forEach(k => localStorage.removeItem(k));
+    setKeyInput("");
+    setApiKey("");
+    addToast(t.common.success, "success");
+    setTimeout(() => window.location.reload(), 500);
+  };
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content fade-in-up" onClick={e => e.stopPropagation()}>
+        <div className="modal-title">
+          <span>\u2699\uFE0F</span> {t.settings.title}
+          <button className="modal-close" onClick={onClose}>\u2715</button>
+        </div>
+        <div className="api-section">
+          <label className="input-label">{t.settings.apiKey}</label>
+          <div className="api-key-row">
+            <input className="input-field" type="password" value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder={t.settings.apiKeyPlaceholder} />
+            <button className="btn btn-primary btn-sm" onClick={saveKey}>{t.settings.saveKey}</button>
+          </div>
+          {apiKey && <button className="btn btn-danger btn-sm" style={{marginTop:8}} onClick={removeKey}>{t.settings.removeKey}</button>}
+        </div>
+        <div className="toggle-row">
+          <span className="toggle-label">{t.settings.offlineMode}</span>
+          <div className={`toggle ${offlineMode ? "active" : ""}`} onClick={() => { setOfflineMode(!offlineMode); localStorage.setItem("cyberscan_offline", !offlineMode); }} />
+        </div>
+        <p style={{fontSize:"0.72rem",color:"var(--text3)",marginTop:4}}>{t.settings.offlineDesc}</p>
+        <div style={{marginTop:20,display:"flex",gap:8,flexWrap:"wrap"}}>
+          <button className="btn btn-secondary btn-sm" onClick={clearCache}>{t.settings.clearCache}</button>
+          <button className="btn btn-danger btn-sm" onClick={clearAll}>{t.settings.clearAll}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ PROGRESS BAR ============
+function ProgressBar({ progress, label }) {
+  return (
+    <div>
+      <div className="progress-container">
+        <div className="progress-bar" style={{ width: progress + "%" }} />
+      </div>
+      {label && <div className="progress-label">{label}</div>}
+    </div>
+  );
+}
+
+// ============ LOADING SKELETON ============
+function LoadingSkeleton() {
+  return (
+    <div style={{marginTop:16}}>
+      <div className="skeleton wide" />
+      <div className="skeleton medium" />
+      <div className="skeleton wide" />
+      <div className="skeleton short" />
+      <div className="skeleton wide" />
+      <div className="skeleton medium" />
+    </div>
+  );
+}
+
+// ============ PASSWORD GAUGE ============
+function PasswordGauge({ score, level, label }) {
+  const color = getStrengthColor(level);
+  const circumference = 2 * Math.PI * 65;
+  const offset = circumference - (score / 100) * circumference;
+  return (
+    <div className="password-gauge-container">
+      <div className="password-gauge">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="65" fill="none" stroke="var(--bg2)" strokeWidth="10" />
+          <circle cx="80" cy="80" r="65" fill="none" stroke={color} strokeWidth="10"
+            strokeDasharray={circumference} strokeDashoffset={offset}
+            strokeLinecap="round" style={{transition:"stroke-dashoffset 0.8s ease, stroke 0.5s ease"}} />
+        </svg>
+        <div className="password-gauge-text">
+          <div className="password-gauge-score" style={{color}}>{score}</div>
+          <div className="password-gauge-label">{label}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ CVSS MINI GAUGE ============
+function CvssGauge({ score }) {
+  const max = 10;
+  const color = score >= 9 ? "var(--red)" : score >= 7 ? "var(--orange)" : score >= 4 ? "var(--yellow)" : "var(--green)";
+  const circumference = 2 * Math.PI * 22;
+  const offset = circumference - (score / max) * circumference;
+  return (
+    <div className="cvss-gauge">
+      <svg width="54" height="54" viewBox="0 0 54 54">
+        <circle cx="27" cy="27" r="22" fill="none" stroke="var(--bg2)" strokeWidth="5" />
+        <circle cx="27" cy="27" r="22" fill="none" stroke={color} strokeWidth="5"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          strokeLinecap="round" style={{transition:"all 0.5s ease"}} />
+      </svg>
+      <span className="cvss-text" style={{color}}>{score}</span>
+    </div>
+  );
+}
+
+// ============ NETWORK SCANNER TAB ============
+function NetworkScanner({ t, apiKey, addToast, addHistory, offlineMode }) {
+  const [target, setTarget] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState(null);
+  const [fromCache, setFromCache] = useState(false);
+
+  const doScan = async () => {
+    if (!target.trim()) return addToast(t.scanner.inputLabel, "error");
+    const cacheKey = getCacheKey("network", target);
+    const cached = localStorage.getItem(cacheKey);
+    if (offlineMode && cached) {
+      setResult(JSON.parse(cached));
+      setFromCache(true);
+      addToast(t.common.cached, "info");
+      return;
+    }
+    if (!apiKey) return addToast("API Key required", "error");
+    setLoading(true); setProgress(0); setResult(null); setFromCache(false);
+    const intv = setInterval(() => setProgress(p => Math.min(p + Math.random() * 15, 90)), 400);
+    try {
+      const sys = `You are a cybersecurity expert AI. The user wants an educational simulated network scan analysis. Respond ONLY with valid JSON. Do not include any text outside the JSON object. Format:
+{
+  "ports": [{"port": number, "service": "string", "state": "open|filtered|closed", "risk": "high|medium|low", "notes": "string"}],
+  "services": [{"name": "string", "version": "string", "info": "string"}],
+  "risks": [{"level": "high|medium|low", "title": "string", "description": "string"}],
+  "recommendations": ["string"],
+  "overallRisk": "high|medium|low",
+  "summary": "string"
+}
+Provide realistic, educational data. Include 5-8 ports, 3-5 services, 3-5 risks, and 4-6 recommendations.`;
+      const msg = `Analyze the target: ${target.trim()}\nProvide a simulated educational network security analysis.`;
+      const raw = await callClaude(apiKey, sys, msg);
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid response format");
+      const data = JSON.parse(jsonMatch[0]);
+      setResult(data);
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+      addHistory("network", target.trim());
+      addToast(t.common.success, "success");
+    } catch (err) {
+      addToast(err.message, "error");
+      if (cached) { setResult(JSON.parse(cached)); setFromCache(true); }
+    } finally {
+      clearInterval(intv); setProgress(100); setTimeout(() => setLoading(false), 300);
+    }
+  };
+
+  const exportResult = () => {
+    if (!result) return;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CyberScan - ${target}</title><style>body{font-family:monospace;background:#0c0c14;color:#e0e0f0;padding:40px}h1{color:#00ff88}h2{color:#00d4ff;margin-top:20px}.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:bold;margin-right:4px}.high{background:#ff2d5530;color:#ff2d55;border:1px solid #ff2d5550}.medium{background:#ff880030;color:#ff8800;border:1px solid #ff880050}.low{background:#00ff8820;color:#00ff88;border:1px solid #00ff8840}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #ffffff10}th{color:#a0a0c0}li{margin:6px 0}</style></head><body><h1>CyberScan AI - Network Scan</h1><p>Target: <strong>${target}</strong></p><p>Date: ${new Date().toLocaleString()}</p><p>Overall Risk: <span class="badge ${result.overallRisk}">${result.overallRisk?.toUpperCase()}</span></p><p>${result.summary || ""}</p><h2>Ports</h2><table><tr><th>Port</th><th>Service</th><th>State</th><th>Risk</th><th>Notes</th></tr>${(result.ports||[]).map(p=>`<tr><td>${p.port}</td><td>${p.service}</td><td>${p.state}</td><td><span class="badge ${p.risk}">${p.risk}</span></td><td>${p.notes}</td></tr>`).join("")}</table><h2>Services</h2><ul>${(result.services||[]).map(s=>`<li><strong>${s.name}</strong> ${s.version||""} - ${s.info||""}</li>`).join("")}</ul><h2>Risks</h2><ul>${(result.risks||[]).map(r=>`<li><span class="badge ${r.level}">${r.level}</span> <strong>${r.title}</strong>: ${r.description}</li>`).join("")}</ul><h2>Recommendations</h2><ul>${(result.recommendations||[]).map(r=>`<li>${r}</li>`).join("")}</ul></body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `cyberscan_network_${target.replace(/[^a-zA-Z0-9]/g,"_")}.html`; a.click();
+    addToast(t.common.success, "success");
+  };
+
+  const riskBadge = (level) => <span className={`badge badge-${level}`}>{level?.toUpperCase()}</span>;
+
+  return (
+    <div className="fade-in-up">
+      <div className="card">
+        <div className="card-title"><span className="icon">\uD83D\uDD0D</span> {t.scanner.title}</div>
+        <div className="disclaimer">{t.scanner.disclaimer}</div>
+        <div className="input-group">
+          <label className="input-label">{t.scanner.inputLabel}</label>
+          <input className="input-field" value={target} onChange={e => setTarget(e.target.value)} placeholder={t.scanner.placeholder} onKeyDown={e => e.key === "Enter" && doScan()} />
+        </div>
+        <button className="btn btn-primary btn-full" onClick={doScan} disabled={loading}>
+          {loading ? t.scanner.scanning : t.scanner.scanBtn}
+        </button>
+        {loading && <ProgressBar progress={progress} label={t.scanner.scanning} />}
+      </div>
+      {loading && !result && <LoadingSkeleton />}
+      {result && (
+        <div className="fade-in-up-d1">
+          <div className="card">
+            <div className="card-title"><span className="icon">\uD83D\uDCCA</span> {t.scanner.results} {fromCache && <span className="badge badge-none">{t.common.cached}</span>}</div>
+            {result.summary && <p style={{fontSize:"0.88rem",color:"var(--text2)",marginBottom:16,lineHeight:1.7}}>{result.summary}</p>}
+            <div style={{marginBottom:12}}>Overall Risk: {riskBadge(result.overallRisk)}</div>
+
+            <div className="result-section">
+              <h3>\uD83D\uDEA2 {t.scanner.ports}</h3>
+              <div className="cve-table-wrapper">
+                <table className="cve-table">
+                  <thead><tr><th>Port</th><th>Service</th><th>State</th><th>Risk</th><th>Notes</th></tr></thead>
+                  <tbody>
+                    {(result.ports || []).map((p, i) => (
+                      <tr key={i}><td><code>{p.port}</code></td><td>{p.service}</td><td>{p.state}</td><td>{riskBadge(p.risk)}</td><td style={{color:"var(--text2)"}}>{p.notes}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="result-section">
+              <h3>\uD83D\uDD27 {t.scanner.services}</h3>
+              {(result.services || []).map((s, i) => (
+                <div className="result-item info" key={i}><strong>{s.name}</strong> {s.version && <code>{s.version}</code>} {s.info && <span style={{color:"var(--text2)"}}> - {s.info}</span>}</div>
+              ))}
+            </div>
+
+            <div className="result-section">
+              <h3>\u26A0\uFE0F {t.scanner.risks}</h3>
+              {(result.risks || []).map((r, i) => (
+                <div className={`result-item ${r.level === "high" ? "danger" : r.level === "medium" ? "warning" : ""}`} key={i}>
+                  {riskBadge(r.level)} <strong>{r.title}</strong><br/><span style={{color:"var(--text2)"}}>{r.description}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="result-section">
+              <h3>\u2705 {t.scanner.recommendations}</h3>
+              {(result.recommendations || []).map((r, i) => (
+                <div className="result-item" key={i}>{r}</div>
+              ))}
+            </div>
+
+            <div className="action-bar">
+              <button className="btn btn-secondary btn-sm" onClick={exportResult}>\uD83D\uDCE5 {t.common.export}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ VULNERABILITY CHECK TAB ============
+function VulnCheck({ t, apiKey, addToast, addHistory, offlineMode }) {
+  const [target, setTarget] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState(null);
+  const [fromCache, setFromCache] = useState(false);
+
+  const doCheck = async () => {
+    if (!target.trim()) return addToast(t.vuln.inputLabel, "error");
+    const cacheKey = getCacheKey("vuln", target);
+    const cached = localStorage.getItem(cacheKey);
+    if (offlineMode && cached) {
+      setResult(JSON.parse(cached)); setFromCache(true);
+      addToast(t.common.cached, "info"); return;
+    }
+    if (!apiKey) return addToast("API Key required", "error");
+    setLoading(true); setProgress(0); setResult(null); setFromCache(false);
+    const intv = setInterval(() => setProgress(p => Math.min(p + Math.random() * 15, 90)), 400);
+    try {
+      const sys = `You are a cybersecurity vulnerability expert. Respond ONLY with valid JSON. Do not include any text outside the JSON object. Format:
+{
+  "technology": "string",
+  "cves": [{"id": "CVE-XXXX-XXXXX", "title": "string", "cvss": number, "severity": "critical|high|medium|low", "description": "string", "exploitAvailable": boolean}],
+  "overallSeverity": "critical|high|medium|low",
+  "summary": "string",
+  "patchRecommendations": ["string"],
+  "references": ["string"]
+}
+Provide realistic, educational data about known vulnerabilities. Include 3-6 CVEs with accurate-looking information.`;
+      const msg = `Check vulnerabilities for: ${target.trim()}\nList known CVEs, CVSS scores, exploit availability, and patch recommendations.`;
+      const raw = await callClaude(apiKey, sys, msg);
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid response format");
+      const data = JSON.parse(jsonMatch[0]);
+      setResult(data);
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+      addHistory("vuln", target.trim());
+      addToast(t.common.success, "success");
+    } catch (err) {
+      addToast(err.message, "error");
+      if (cached) { setResult(JSON.parse(cached)); setFromCache(true); }
+    } finally {
+      clearInterval(intv); setProgress(100); setTimeout(() => setLoading(false), 300);
+    }
+  };
+
+  const exportResult = () => {
+    if (!result) return;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CyberScan - Vuln - ${target}</title><style>body{font-family:monospace;background:#0c0c14;color:#e0e0f0;padding:40px}h1{color:#00ff88}h2{color:#00d4ff;margin-top:20px}.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:bold}.critical{background:#ff2d5530;color:#ff2d55;border:1px solid #ff2d5550}.high{background:#ff2d5530;color:#ff2d55;border:1px solid #ff2d5550}.medium{background:#ff880030;color:#ff8800;border:1px solid #ff880050}.low{background:#00ff8820;color:#00ff88;border:1px solid #00ff8840}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #ffffff10}th{color:#a0a0c0}li{margin:6px 0}</style></head><body><h1>CyberScan AI - Vulnerability Check</h1><p>Technology: <strong>${target}</strong></p><p>Date: ${new Date().toLocaleString()}</p><p>Overall Severity: <span class="badge ${result.overallSeverity}">${result.overallSeverity?.toUpperCase()}</span></p><p>${result.summary||""}</p><h2>CVEs</h2><table><tr><th>CVE ID</th><th>CVSS</th><th>Severity</th><th>Exploit</th><th>Description</th></tr>${(result.cves||[]).map(c=>`<tr><td>${c.id}</td><td>${c.cvss}</td><td><span class="badge ${c.severity}">${c.severity}</span></td><td>${c.exploitAvailable?"Yes":"No"}</td><td>${c.description}</td></tr>`).join("")}</table><h2>Patch Recommendations</h2><ul>${(result.patchRecommendations||[]).map(p=>`<li>${p}</li>`).join("")}</ul></body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `cyberscan_vuln_${target.replace(/[^a-zA-Z0-9]/g,"_")}.html`; a.click();
+    addToast(t.common.success, "success");
+  };
+
+  const sevBadge = (sev) => <span className={`badge badge-${sev === "critical" ? "critical" : sev}`}>{sev?.toUpperCase()}</span>;
+
+  return (
+    <div className="fade-in-up">
+      <div className="card">
+        <div className="card-title"><span className="icon">\uD83D\uDEE1\uFE0F</span> {t.vuln.title}</div>
+        <div className="input-group">
+          <label className="input-label">{t.vuln.inputLabel}</label>
+          <input className="input-field" value={target} onChange={e => setTarget(e.target.value)} placeholder={t.vuln.placeholder} onKeyDown={e => e.key === "Enter" && doCheck()} />
+        </div>
+        <button className="btn btn-primary btn-full" onClick={doCheck} disabled={loading}>
+          {loading ? t.vuln.checking : t.vuln.checkBtn}
+        </button>
+        {loading && <ProgressBar progress={progress} label={t.vuln.checking} />}
+      </div>
+      {loading && !result && <LoadingSkeleton />}
+      {result && (
+        <div className="fade-in-up-d1">
+          <div className="card">
+            <div className="card-title"><span className="icon">\uD83D\uDCCB</span> {result.technology || target} {fromCache && <span className="badge badge-none">{t.common.cached}</span>}</div>
+            {result.summary && <p style={{fontSize:"0.88rem",color:"var(--text2)",marginBottom:16,lineHeight:1.7}}>{result.summary}</p>}
+            <div style={{marginBottom:12}}>{t.vuln.severity}: {sevBadge(result.overallSeverity)}</div>
+
+            <div className="result-section">
+              <h3>\uD83D\uDD34 {t.vuln.cves}</h3>
+              <div className="cve-table-wrapper">
+                <table className="cve-table">
+                  <thead><tr><th>CVE ID</th><th>{t.vuln.cvss}</th><th>{t.vuln.severity}</th><th>{t.vuln.exploits}</th><th>Description</th></tr></thead>
+                  <tbody>
+                    {(result.cves || []).map((c, i) => (
+                      <tr key={i}>
+                        <td><code>{c.id}</code></td>
+                        <td><CvssGauge score={c.cvss} /></td>
+                        <td>{sevBadge(c.severity)}</td>
+                        <td style={{color: c.exploitAvailable ? "var(--red)" : "var(--green)"}}>{c.exploitAvailable ? "Yes" : "No"}</td>
+                        <td style={{color:"var(--text2)",maxWidth:300}}>{c.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="result-section">
+              <h3>\uD83D\uDD27 {t.vuln.patches}</h3>
+              {(result.patchRecommendations || []).map((p, i) => (
+                <div className="result-item" key={i}>{p}</div>
+              ))}
+            </div>
+
+            <div className="action-bar">
+              <button className="btn btn-secondary btn-sm" onClick={exportResult}>\uD83D\uDCE5 {t.common.export}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ PASSWORD ANALYZER TAB ============
+function PasswordAnalyzer({ t }) {
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const result = useMemo(() => analyzePassword(password), [password]);
+  const level = result ? getStrengthLevel(result.score) : 0;
+  const color = getStrengthColor(level);
+  const levelLabel = result ? t.password.levels[level] : "";
+
+  const suggestions = [];
+  if (result) {
+    if (result.length < 12) suggestions.push({ ht: "Itilize omwen 12 karaktè", fr: "Utilisez au moins 12 caracteres", en: "Use at least 12 characters" });
+    if (!result.hasUpper) suggestions.push({ ht: "Ajoute lèt majiskil", fr: "Ajoutez des majuscules", en: "Add uppercase letters" });
+    if (!result.hasLower) suggestions.push({ ht: "Ajoute lèt miniskil", fr: "Ajoutez des minuscules", en: "Add lowercase letters" });
+    if (!result.hasDigit) suggestions.push({ ht: "Ajoute chif", fr: "Ajoutez des chiffres", en: "Add digits" });
+    if (!result.hasSymbol) suggestions.push({ ht: "Ajoute senbòl espesyal (!@#$%)", fr: "Ajoutez des symboles (!@#$%)", en: "Add special symbols (!@#$%)" });
+    if (result.hasRepeats) suggestions.push({ ht: "Evite karaktè ki repete", fr: "Evitez les caracteres repetes", en: "Avoid repeated characters" });
+    if (result.isCommon) suggestions.push({ ht: "Evite modèl komen", fr: "Evitez les motifs communs", en: "Avoid common patterns" });
+  }
+
+  // Determine current language key from the translation object
+  const langKey = t === T.ht ? "ht" : t === T.fr ? "fr" : "en";
+
+  return (
+    <div className="fade-in-up">
+      <div className="card">
+        <div className="card-title"><span className="icon">\uD83D\uDD10</span> {t.password.title}</div>
+        <div style={{padding:"10px 14px",background:"rgba(0,255,136,0.05)",border:"1px solid rgba(0,255,136,0.15)",borderRadius:8,marginBottom:16,fontSize:"0.78rem",color:"var(--green)"}}>
+          \uD83D\uDD12 {t.password.localOnly}
+        </div>
+        <div className="input-group">
+          <label className="input-label">{t.password.inputLabel}</label>
+          <div style={{position:"relative"}}>
+            <input className="input-field" type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder={t.password.placeholder} style={{paddingRight:48}} />
+            <button onClick={() => setShowPw(!showPw)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--text3)",cursor:"pointer",fontSize:"1.1rem"}}>{showPw ? "\uD83D\uDE48" : "\uD83D\uDC41\uFE0F"}</button>
+          </div>
+        </div>
+      </div>
+
+      {result && password && (
+        <div className="fade-in-up-d1">
+          <div className="card">
+            <PasswordGauge score={result.score} level={level} label={levelLabel} />
+
+            <div className="strength-bar-container">
+              <div className="strength-bar" style={{ width: result.score + "%", background: color }} />
+            </div>
+            <div style={{textAlign:"center",fontSize:"0.85rem",color,fontWeight:700,marginBottom:20}}>{levelLabel}</div>
+
+            <div className="stats-grid" style={{marginBottom:16}}>
+              <div className="stat-card green">
+                <div className="stat-number" style={{fontSize:"1.3rem",color:"var(--cyan)"}}>{formatCrackTime(result.seconds)}</div>
+                <div className="stat-label">{t.password.timeToCrack}</div>
+              </div>
+              <div className="stat-card cyan">
+                <div className="stat-number" style={{fontSize:"1.3rem",color:"var(--green)"}}>{result.entropy}</div>
+                <div className="stat-label">{t.password.entropy} (bits)</div>
+              </div>
+              <div className="stat-card orange">
+                <div className="stat-number" style={{fontSize:"1.3rem"}}>{result.charsetSize}</div>
+                <div className="stat-label">{t.password.charset}</div>
+              </div>
+              <div className="stat-card red">
+                <div className="stat-number" style={{fontSize:"1.3rem"}}>{result.length}</div>
+                <div className="stat-label">{t.password.length}</div>
+              </div>
+            </div>
+
+            <div className="result-section">
+              <h3>\uD83D\uDD24 {t.password.charAnalysis}</h3>
+              <div className="char-grid">
+                <div className={`char-item ${result.hasLower ? "active" : "inactive"}`}>
+                  <div className="char-icon">{result.hasLower ? "\u2705" : "\u274C"}</div>
+                  <div className="char-value">a-z</div>
+                  <div className="char-label">{t.password.lower}</div>
+                </div>
+                <div className={`char-item ${result.hasUpper ? "active" : "inactive"}`}>
+                  <div className="char-icon">{result.hasUpper ? "\u2705" : "\u274C"}</div>
+                  <div className="char-value">A-Z</div>
+                  <div className="char-label">{t.password.upper}</div>
+                </div>
+                <div className={`char-item ${result.hasDigit ? "active" : "inactive"}`}>
+                  <div className="char-icon">{result.hasDigit ? "\u2705" : "\u274C"}</div>
+                  <div className="char-value">0-9</div>
+                  <div className="char-label">{t.password.digits}</div>
+                </div>
+                <div className={`char-item ${result.hasSymbol ? "active" : "inactive"}`}>
+                  <div className="char-icon">{result.hasSymbol ? "\u2705" : "\u274C"}</div>
+                  <div className="char-value">!@#</div>
+                  <div className="char-label">{t.password.symbols}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="result-section">
+              <h3>\uD83D\uDD0D {t.password.patterns}</h3>
+              {result.hasRepeats && <div className="result-item danger">{t.password.hasRepeats}</div>}
+              {result.isCommon && <div className="result-item danger">{t.password.isCommon}</div>}
+              {!result.hasRepeats && !result.isCommon && <div className="result-item">{t.password.noIssues}</div>}
+            </div>
+
+            {suggestions.length > 0 && (
+              <div className="result-section">
+                <h3>\uD83D\uDCA1 {t.password.suggestions}</h3>
+                {suggestions.map((s, i) => <div className="result-item warning" key={i}>{s[langKey]}</div>)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ HEADER ANALYZER TAB ============
+function HeaderAnalyzer({ t, apiKey, addToast, addHistory, offlineMode }) {
+  const [target, setTarget] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState(null);
+  const [fromCache, setFromCache] = useState(false);
+
+  const doAnalyze = async () => {
+    if (!target.trim()) return addToast(t.headers.inputLabel, "error");
+    const cacheKey = getCacheKey("headers", target);
+    const cached = localStorage.getItem(cacheKey);
+    if (offlineMode && cached) {
+      setResult(JSON.parse(cached)); setFromCache(true);
+      addToast(t.common.cached, "info"); return;
+    }
+    if (!apiKey) return addToast("API Key required", "error");
+    setLoading(true); setProgress(0); setResult(null); setFromCache(false);
+    const intv = setInterval(() => setProgress(p => Math.min(p + Math.random() * 15, 90)), 400);
+    try {
+      const sys = `You are a web security expert specializing in HTTP security headers. Respond ONLY with valid JSON. Do not include any text outside the JSON object. Format:
+{
+  "url": "string",
+  "presentHeaders": [{"name": "string", "value": "string", "status": "good|warning|bad", "notes": "string"}],
+  "missingHeaders": [{"name": "string", "importance": "critical|recommended|optional", "description": "string", "recommendation": "string"}],
+  "overallRisk": "high|medium|low",
+  "score": number,
+  "summary": "string",
+  "recommendations": ["string"]
+}
+Analyze typical security headers for this URL/domain. Include: Strict-Transport-Security, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-XSS-Protection, etc. Provide 4-7 present headers and 3-5 missing headers. Score is 0-100.`;
+      const msg = `Analyze HTTP security headers for: ${target.trim()}\nProvide a comprehensive security header analysis.`;
+      const raw = await callClaude(apiKey, sys, msg);
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid response format");
+      const data = JSON.parse(jsonMatch[0]);
+      setResult(data);
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+      addHistory("headers", target.trim());
+      addToast(t.common.success, "success");
+    } catch (err) {
+      addToast(err.message, "error");
+      if (cached) { setResult(JSON.parse(cached)); setFromCache(true); }
+    } finally {
+      clearInterval(intv); setProgress(100); setTimeout(() => setLoading(false), 300);
+    }
+  };
+
+  const exportResult = () => {
+    if (!result) return;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CyberScan - Headers - ${target}</title><style>body{font-family:monospace;background:#0c0c14;color:#e0e0f0;padding:40px}h1{color:#00ff88}h2{color:#00d4ff;margin-top:20px}.good{color:#00ff88}.warning{color:#ff8800}.bad{color:#ff2d55}.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:bold}.critical{background:#ff2d5530;color:#ff2d55}.recommended{background:#ff880030;color:#ff8800}.optional{background:#00d4ff20;color:#00d4ff}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #ffffff10}th{color:#a0a0c0}li{margin:6px 0}</style></head><body><h1>CyberScan AI - Header Analysis</h1><p>URL: <strong>${target}</strong></p><p>Date: ${new Date().toLocaleString()}</p><p>Score: ${result.score}/100</p><p>${result.summary||""}</p><h2>Present Headers</h2><table><tr><th>Header</th><th>Value</th><th>Status</th><th>Notes</th></tr>${(result.presentHeaders||[]).map(h=>`<tr><td>${h.name}</td><td>${h.value}</td><td class="${h.status}">${h.status}</td><td>${h.notes}</td></tr>`).join("")}</table><h2>Missing Headers</h2><table><tr><th>Header</th><th>Importance</th><th>Description</th><th>Recommendation</th></tr>${(result.missingHeaders||[]).map(h=>`<tr><td>${h.name}</td><td><span class="badge ${h.importance}">${h.importance}</span></td><td>${h.description}</td><td>${h.recommendation}</td></tr>`).join("")}</table><h2>Recommendations</h2><ul>${(result.recommendations||[]).map(r=>`<li>${r}</li>`).join("")}</ul></body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `cyberscan_headers_${target.replace(/[^a-zA-Z0-9]/g,"_")}.html`; a.click();
+    addToast(t.common.success, "success");
+  };
+
+  const statusIcon = (s) => s === "good" ? "\u2705" : s === "warning" ? "\u26A0\uFE0F" : "\u274C";
+  const impBadge = (imp) => <span className={`badge badge-${imp === "critical" ? "high" : imp === "recommended" ? "medium" : "info"}`}>{imp?.toUpperCase()}</span>;
+
+  return (
+    <div className="fade-in-up">
+      <div className="card">
+        <div className="card-title"><span className="icon">\uD83D\uDCE1</span> {t.headers.title}</div>
+        <div className="input-group">
+          <label className="input-label">{t.headers.inputLabel}</label>
+          <input className="input-field" value={target} onChange={e => setTarget(e.target.value)} placeholder={t.headers.placeholder} onKeyDown={e => e.key === "Enter" && doAnalyze()} />
+        </div>
+        <button className="btn btn-primary btn-full" onClick={doAnalyze} disabled={loading}>
+          {loading ? t.headers.analyzing : t.headers.analyzeBtn}
+        </button>
+        {loading && <ProgressBar progress={progress} label={t.headers.analyzing} />}
+      </div>
+      {loading && !result && <LoadingSkeleton />}
+      {result && (
+        <div className="fade-in-up-d1">
+          <div className="card">
+            <div className="card-title"><span className="icon">\uD83D\uDCCA</span> {result.url || target} {fromCache && <span className="badge badge-none">{t.common.cached}</span>}</div>
+            {result.summary && <p style={{fontSize:"0.88rem",color:"var(--text2)",marginBottom:16,lineHeight:1.7}}>{result.summary}</p>}
+            <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:16,flexWrap:"wrap"}}>
+              <span>{t.headers.riskLevel}: <span className={`badge badge-${result.overallRisk}`}>{result.overallRisk?.toUpperCase()}</span></span>
+              <span style={{fontFamily:"'DM Mono',monospace",color:"var(--cyan)"}}>Score: {result.score}/100</span>
+            </div>
+
+            <div className="result-section">
+              <h3>\u2705 {t.headers.present}</h3>
+              {(result.presentHeaders || []).map((h, i) => (
+                <div className={`result-item ${h.status === "bad" ? "danger" : h.status === "warning" ? "warning" : ""}`} key={i}>
+                  {statusIcon(h.status)} <strong>{h.name}</strong>: <code>{h.value}</code>
+                  {h.notes && <div style={{color:"var(--text2)",marginTop:4,fontSize:"0.8rem"}}>{h.notes}</div>}
+                </div>
+              ))}
+            </div>
+
+            <div className="result-section">
+              <h3>\u274C {t.headers.missing}</h3>
+              {(result.missingHeaders || []).map((h, i) => (
+                <div className="result-item danger" key={i}>
+                  {impBadge(h.importance)} <strong>{h.name}</strong>
+                  <div style={{color:"var(--text2)",marginTop:4,fontSize:"0.8rem"}}>{h.description}</div>
+                  <div style={{color:"var(--green)",marginTop:4,fontSize:"0.8rem"}}>\u27A1 {h.recommendation}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="result-section">
+              <h3>\uD83D\uDCA1 {t.headers.recommendations}</h3>
+              {(result.recommendations || []).map((r, i) => (
+                <div className="result-item" key={i}>{r}</div>
+              ))}
+            </div>
+
+            <div className="action-bar">
+              <button className="btn btn-secondary btn-sm" onClick={exportResult}>\uD83D\uDCE5 {t.common.export}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ STATS TAB ============
+function StatsTab({ t, history, setHistory, favorites, setFavorites, addToast }) {
+  const networkCount = history.filter(h => h.type === "network").length;
+  const vulnCount = history.filter(h => h.type === "vuln").length;
+  const headerCount = history.filter(h => h.type === "headers").length;
+
+  const targetCounts = {};
+  history.forEach(h => { targetCounts[h.target] = (targetCounts[h.target] || 0) + 1; });
+  const topTargets = Object.entries(targetCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+  const clearHistory = () => {
+    localStorage.removeItem("cyberscan_history");
+    setHistory([]);
+    addToast(t.common.success, "success");
+  };
+
+  const toggleFav = (item) => {
+    const key = item.type + "_" + item.target;
+    const newFavs = { ...favorites };
+    if (newFavs[key]) delete newFavs[key]; else newFavs[key] = { ...item, favAt: Date.now() };
+    setFavorites(newFavs);
+    localStorage.setItem("cyberscan_favorites", JSON.stringify(newFavs));
+  };
+
+  const deleteItem = (idx) => {
+    const newHist = [...history];
+    newHist.splice(idx, 1);
+    setHistory(newHist);
+    localStorage.setItem("cyberscan_history", JSON.stringify(newHist));
+  };
+
+  const typeIcon = (type) => type === "network" ? "\uD83D\uDD0D" : type === "vuln" ? "\uD83D\uDEE1\uFE0F" : "\uD83D\uDCE1";
+  const typeLabel = (type) => type === "network" ? t.tabs.scanner : type === "vuln" ? t.tabs.vuln : t.tabs.headers;
+
+  return (
+    <div className="fade-in-up">
+      <div className="card">
+        <div className="card-title"><span className="icon">\uD83D\uDCCA</span> {t.stats.title}</div>
+        <div className="stats-grid">
+          <div className="stat-card green">
+            <div className="stat-number" style={{color:"var(--green)"}}>{history.length}</div>
+            <div className="stat-label">{t.stats.totalScans}</div>
+          </div>
+          <div className="stat-card cyan">
+            <div className="stat-number" style={{color:"var(--cyan)"}}>{networkCount}</div>
+            <div className="stat-label">{t.stats.networkScans}</div>
+          </div>
+          <div className="stat-card orange">
+            <div className="stat-number" style={{color:"var(--orange)"}}>{vulnCount}</div>
+            <div className="stat-label">{t.stats.vulnChecks}</div>
+          </div>
+          <div className="stat-card red">
+            <div className="stat-number" style={{color:"var(--red)"}}>{headerCount}</div>
+            <div className="stat-label">{t.stats.headerAnalyses}</div>
+          </div>
+        </div>
+      </div>
+
+      {topTargets.length > 0 && (
+        <div className="card fade-in-up-d1">
+          <div className="card-title"><span className="icon">\uD83C\uDFC6</span> {t.stats.mostScanned}</div>
+          {topTargets.map(([target, count], i) => (
+            <div className="history-item" key={i} style={{justifyContent:"flex-start",gap:16}}>
+              <span style={{fontFamily:"'DM Mono',monospace",color:"var(--cyan)",minWidth:28,fontWeight:700}}>#{i + 1}</span>
+              <span style={{fontFamily:"'DM Mono',monospace",color:"var(--green)",flex:1}}>{target}</span>
+              <span className="badge badge-info">{count}x</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card fade-in-up-d2">
+        <div className="card-title" style={{justifyContent:"space-between"}}>
+          <span><span className="icon">\uD83D\uDCDD</span> {t.stats.history}</span>
+          {history.length > 0 && <button className="btn btn-danger btn-sm" onClick={clearHistory}>{t.stats.clearHistory}</button>}
+        </div>
+        {history.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">\uD83D\uDCED</div>
+            <div className="empty-text">{t.stats.noHistory}</div>
+          </div>
+        ) : (
+          <div className="history-list">
+            {[...history].reverse().map((item, i) => {
+              const realIdx = history.length - 1 - i;
+              const favKey = item.type + "_" + item.target;
+              const isFav = !!favorites[favKey];
+              return (
+                <div className="history-item" key={i}>
+                  <div className="history-item-info">
+                    <div className="history-item-target">{typeIcon(item.type)} {item.target}</div>
+                    <div className="history-item-meta">
+                      <span>{typeLabel(item.type)}</span>
+                      <span>{new Date(item.timestamp).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="history-item-actions">
+                    <button className="btn btn-secondary btn-sm" onClick={() => toggleFav(item)} title={isFav ? t.common.unfavorite : t.common.favorite} style={{color: isFav ? "var(--yellow)" : "var(--text3)"}}>{isFav ? "\u2605" : "\u2606"}</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => deleteItem(realIdx)} title={t.common.delete}>\u2715</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============ MAIN APP ============
+function App() {
+  const [lang, setLang] = useState(() => localStorage.getItem("cyberscan_lang") || "ht");
+  const [tab, setTab] = useState("scanner");
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("cyberscan_api_key") || "");
+  const [offlineMode, setOfflineMode] = useState(() => localStorage.getItem("cyberscan_offline") === "true");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showSettings, setShowSettings] = useState(false);
+  const [toasts, setToasts] = useState([]);
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cyberscan_history") || "[]"); } catch { return []; }
+  });
+  const [favorites, setFavorites] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cyberscan_favorites") || "{}"); } catch { return {}; }
+  });
+
+  const t = T[lang] || T.ht;
+
+  useEffect(() => {
+    localStorage.setItem("cyberscan_lang", lang);
+  }, [lang]);
+
+  useEffect(() => {
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
+
+  useEffect(() => { initMatrix(); }, []);
+
+  const addToast = useCallback((message, type = "info") => {
+    const id = generateId();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.map(t => t.id === id ? { ...t, removing: true } : t));
+      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 300);
+    }, 3500);
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.map(t => t.id === id ? { ...t, removing: true } : t));
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 300);
+  }, []);
+
+  const addHistory = useCallback((type, target) => {
+    const entry = { id: generateId(), type, target, timestamp: Date.now() };
+    setHistory(prev => {
+      const updated = [...prev, entry];
+      localStorage.setItem("cyberscan_history", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const tabItems = [
+    { id: "scanner", icon: "\uD83D\uDD0D", label: t.tabs.scanner },
+    { id: "vuln", icon: "\uD83D\uDEE1\uFE0F", label: t.tabs.vuln },
+    { id: "password", icon: "\uD83D\uDD10", label: t.tabs.password },
+    { id: "headers", icon: "\uD83D\uDCE1", label: t.tabs.headers },
+    { id: "stats", icon: "\uD83D\uDCCA", label: t.tabs.stats }
+  ];
+
+  return (
+    <div className="app-container">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+      <header className="app-header fade-in-up">
+        <div className="app-logo">
+          <div className="app-logo-icon">\uD83D\uDD12</div>
+          <div>
+            <div className="app-title">{t.appTitle}</div>
+            <div className="app-subtitle">{t.appSubtitle}</div>
+          </div>
+        </div>
+        <div className="header-actions">
+          <div className="online-indicator">
+            <div className={`online-dot ${isOnline ? "online" : "offline"}`} />
+            {isOnline ? t.common.online : t.common.offline}
+          </div>
+          <div className="lang-selector">
+            {["ht","fr","en"].map(l => (
+              <button key={l} className={`lang-btn ${lang === l ? "active" : ""}`} onClick={() => setLang(l)}>
+                {l === "ht" ? "KR" : l === "fr" ? "FR" : "EN"}
+              </button>
+            ))}
+          </div>
+          <button className="settings-btn" onClick={() => setShowSettings(true)}>\u2699\uFE0F</button>
+        </div>
+      </header>
+
+      <nav className="tab-bar fade-in-up">
+        {tabItems.map(item => (
+          <button key={item.id} className={`tab-btn ${tab === item.id ? "active" : ""}`} onClick={() => setTab(item.id)}>
+            <span>{item.icon}</span>
+            <span className="tab-label">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {!apiKey && tab !== "password" && tab !== "stats" && (
+        <div className="card fade-in-up" style={{borderColor:"rgba(255,136,0,0.3)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+            <span style={{fontSize:"1.3rem"}}>\uD83D\uDD11</span>
+            <span style={{fontWeight:600,color:"var(--orange)"}}>API Key Required</span>
+          </div>
+          <p style={{fontSize:"0.85rem",color:"var(--text2)",marginBottom:12}}>
+            {lang === "ht" ? "Ou bezwen yon kle API Claude pou itilize fonksyon sa a. Klike sou paramèt pou ajoute kle ou." :
+             lang === "fr" ? "Vous avez besoin d'une cle API Claude pour utiliser cette fonctionnalite. Cliquez sur les parametres pour ajouter votre cle." :
+             "You need a Claude API key to use this feature. Click settings to add your key."}
+          </p>
+          <button className="btn btn-primary btn-sm" onClick={() => setShowSettings(true)}>
+            \u2699\uFE0F {t.settings.title}
+          </button>
+        </div>
+      )}
+
+      <main>
+        {tab === "scanner" && <NetworkScanner t={t} apiKey={apiKey} addToast={addToast} addHistory={addHistory} offlineMode={offlineMode && !isOnline} />}
+        {tab === "vuln" && <VulnCheck t={t} apiKey={apiKey} addToast={addToast} addHistory={addHistory} offlineMode={offlineMode && !isOnline} />}
+        {tab === "password" && <PasswordAnalyzer t={t} />}
+        {tab === "headers" && <HeaderAnalyzer t={t} apiKey={apiKey} addToast={addToast} addHistory={addHistory} offlineMode={offlineMode && !isOnline} />}
+        {tab === "stats" && <StatsTab t={t} history={history} setHistory={setHistory} favorites={favorites} setFavorites={setFavorites} addToast={addToast} />}
+      </main>
+
+      <footer style={{textAlign:"center",padding:"24px 0 16px",fontSize:"0.72rem",color:"var(--text3)",fontFamily:"'DM Mono',monospace"}}>
+        CyberScan AI v1.0 &mdash; {lang === "ht" ? "Zouti edikasyonèl sèlman" : lang === "fr" ? "Outil educatif uniquement" : "Educational tool only"}
+      </footer>
+
+      <SettingsModal show={showSettings} onClose={() => setShowSettings(false)} lang={lang} setLang={setLang} t={t} apiKey={apiKey} setApiKey={setApiKey} offlineMode={offlineMode} setOfflineMode={setOfflineMode} addToast={addToast} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
